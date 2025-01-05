@@ -2,22 +2,10 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-resource "aws_security_group" "allow_http" {
-  name        = "allow_http"
-  description = "Allow HTTP inbound traffic"
-  
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Allow HTTP from anywhere
-  }
-}
-
 resource "aws_instance" "my_webserver" {
   ami           = var.ami_id
   instance_type = "t2.micro"
-  security_groups = [aws_security_group.allow_http.name]
+  security_groups = ["allow_http"]
 
   tags = {
     Name = "my http server"

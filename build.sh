@@ -22,13 +22,6 @@ ntfy -d "packering done ${ami_id}, start terraforming ..."
 
 # terraform apply, var ami_id => IP
 terraform init
-# if SG already exists
-allow_http_sg=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=allow_http" | jq -r '.SecurityGroups[]|.GroupId')
-if [ ! -z "${allow_http_sg}" ];
-then
-  # import it
-  terraform import -var "ami_id=${ami_id}" aws_security_group.allow_http ${allow_http_sg}
-fi
 terraform apply -auto-approve -var "ami_id=${ami_id}"
 public_ip=$(terraform output -json | jq -r '.public_ip.value')
 
