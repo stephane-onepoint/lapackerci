@@ -8,7 +8,7 @@ ntfy() {
     "$@"
 }
 
-ntfy -d "start packer ..."
+ntfy -d "start packering ..."
 
 # packer build => ami_id
 packer plugins install github.com/hashicorp/amazon
@@ -18,14 +18,21 @@ packer init $template
 packer build  -var 'region=eu-west-1' $template | tee packer_output.txt
 ami_id=$(< packer_output.txt tail | awk '$1=="eu-west-1:"{print $2}')
 
-ntfy -d "packer done ${ami_id}, start terraform ..."
+ntfy -d "packering done ${ami_id}, start terraforming ..."
 
 # terraform apply, var ami_id => IP
 terraform init
+# if SG already exists
+allow_http_sg=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=allow_http" | jq -r '.SecurityGroups[]|.GroupId')
+if [ ! -z "${allow_http_sg}" ];
+then
+  # import it
+  terraform import -var "ami_id=${ami_id}" aws_security_group.allow_http ${allow_http_sg}
+fi
 terraform apply -auto-approve -var "ami_id=${ami_id}"
 public_ip=$(terraform output -json | jq -r '.public_ip.value')
 
-ntfy -d "terraform done, test..."
+ntfy -d "terraforming done, testing..."
 
 # test `curl http://ip/ | grep foo`
 curl -fsS -m 30 --retry 12 --retry-all-errors -o output.txt "http://${public_ip}/"
