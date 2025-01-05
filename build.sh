@@ -1,3 +1,3 @@
 #!/bin/sh -eu
 
-echo foo
+echo bar
