@@ -10,13 +10,17 @@ ntfy() {
 
 ntfy -d "start packering ..."
 
-# packer build => ami_id
-packer plugins install github.com/hashicorp/amazon
-template=debian-apache-ami.pkr.hcl
-packer validate $template
-packer init $template
-packer build  -var 'region=eu-west-1' $template | tee packer_output.txt
-ami_id=$(< packer_output.txt tail | awk '$1=="eu-west-1:"{print $2}')
+if [ -z "${ami_id:-}" ];
+then
+	# packer build => ami_id
+	template=debian-apache-ami.pkr.hcl
+	packer validate $template
+	packer init $template  # will dl the plugin if needed
+	packer build  -var 'region=eu-west-1' $template | tee packer_output.txt
+	# last line of packer output contains the id of the newly created AMI
+	#   214   eu-west-1: ami-0613c69b9db83ba96
+	ami_id=$(tail packer_output.txt | awk '$1=="eu-west-1:"{print $2}')
+fi
 
 ntfy -d "packering done ${ami_id}, start terraforming ..."
 
